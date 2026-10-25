@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       TBT Collections
- * Description:       Groups lessons into collections (such as Learn from TED) without touching their single category. Each collection has its own archive at /collection/{slug}/.
- * Version:           0.1.0
+ * Description:       Groups lessons into collections (such as Learn from TED) without touching their single category. Each collection has its own archive at /collection/{slug}/, and [tbtcol_count] shows how many lessons it holds.
+ * Version:           0.2.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            TBT
@@ -12,7 +12,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'TBTCOL_VERSION', '0.1.0' );
+define( 'TBTCOL_VERSION', '0.2.0' );
 
 /**
  * Register the `tbt_collection` taxonomy on posts.
@@ -99,6 +99,31 @@ function tbtcol_admin_filter( $post_type ) {
 	);
 }
 add_action( 'restrict_manage_posts', 'tbtcol_admin_filter' );
+
+/**
+ * [tbtcol_count] — number of published lessons in a collection.
+ *
+ * On a collection archive it counts the collection being viewed, so one
+ * Theme Builder template works for every collection. `slug="..."` counts a
+ * specific collection anywhere else. Outputs just the number.
+ *
+ * @param array|string $atts Shortcode attributes.
+ * @return string
+ */
+function tbtcol_count_shortcode( $atts ) {
+	$atts = shortcode_atts( array( 'slug' => '' ), $atts, 'tbtcol_count' );
+
+	$term = '' !== $atts['slug']
+		? get_term_by( 'slug', sanitize_title( $atts['slug'] ), 'tbt_collection' )
+		: get_queried_object();
+
+	if ( ! $term instanceof WP_Term || 'tbt_collection' !== $term->taxonomy ) {
+		return '0';
+	}
+
+	return (string) (int) $term->count;
+}
+add_shortcode( 'tbtcol_count', 'tbtcol_count_shortcode' );
 
 /**
  * Activation: register the taxonomy, seed Learn from TED if it is missing,
